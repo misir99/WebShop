@@ -1,4 +1,7 @@
 
+using Microsoft.EntityFrameworkCore;
+using WebShop.Data;
+
 namespace WebShop
 {
     public class Program
@@ -13,6 +16,9 @@ namespace WebShop
             // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen();
+
+            builder.Services.AddDbContext<AppDbContext>(options =>
+     options.UseSqlServer(builder.Configuration.GetConnectionString("WebShopDb")));
 
             var app = builder.Build();
 
