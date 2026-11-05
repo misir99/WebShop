@@ -1,6 +1,11 @@
 
 using Microsoft.EntityFrameworkCore;
 using WebShop.Data;
+using WebShop.Services;
+using WebShop.Dtos;       
+
+
+
 
 namespace WebShop
 {
@@ -20,6 +25,8 @@ namespace WebShop
             builder.Services.AddDbContext<AppDbContext>(options =>
      options.UseSqlServer(builder.Configuration.GetConnectionString("WebShopDb")));
 
+            builder.Services.AddScoped<IProductService, ProductService>();
+            builder.Services.AddScoped<ICategoryService, CategoryService>();
             var app = builder.Build();
 
             // Configure the HTTP request pipeline.
