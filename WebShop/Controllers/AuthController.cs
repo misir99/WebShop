@@ -25,5 +25,15 @@ namespace WebShop.Controllers
 
             return StatusCode(201);
         }
+
+        [HttpPost("login")]
+        public async Task<IActionResult> Login(LoginDto dto)
+        {
+            var token = await _service.LoginAsync(dto);
+            if (token == null)
+                return Unauthorized("Neispravan email ili lozinka.");
+
+            return Ok(new { token });
+        }
     }
 }
