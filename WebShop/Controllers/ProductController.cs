@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using WebShop.Dtos;
 using WebShop.Services;
+using Microsoft.AspNetCore.Authorization;
 
 namespace WebShop.Controllers
 {
@@ -30,7 +31,7 @@ namespace WebShop.Controllers
 
             return Ok(product);
         }
-
+        [Authorize]
         [HttpPost]
         public async Task<ActionResult<ProductResponseDto>> Create(CreateProductDto dto)
         {
