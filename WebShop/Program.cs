@@ -2,7 +2,7 @@
 using Microsoft.EntityFrameworkCore;
 using WebShop.Data;
 using WebShop.Services;
-using WebShop.Dtos;
+
 using System.Text;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
@@ -70,7 +70,7 @@ namespace WebShop
                         IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"]!))
                     };
                 });
-
+            builder.Services.AddScoped<IOrderService, OrderService>();
             var app = builder.Build();
 
             // Configure the HTTP request pipeline.
@@ -82,7 +82,7 @@ namespace WebShop
 
             app.UseHttpsRedirection();
             app.UseAuthentication();
-            app.UseAuthorization();
+         
 
             app.UseAuthorization();
 
