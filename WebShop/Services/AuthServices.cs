@@ -50,7 +50,8 @@ namespace WebShop.Services
             var claims = new[]
             {
                 new Claim(ClaimTypes.NameIdentifier, customer.Id.ToString()),
-                new Claim(ClaimTypes.Email, customer.Email)
+                new Claim(ClaimTypes.Email, customer.Email),
+                new Claim(ClaimTypes.Role, customer.Role)
             };
 
             var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_config["Jwt:Key"]!));

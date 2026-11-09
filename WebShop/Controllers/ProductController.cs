@@ -31,7 +31,7 @@ namespace WebShop.Controllers
 
             return Ok(product);
         }
-        [Authorize]
+        [Authorize(Roles = "Admin")]
         [HttpPost]
         public async Task<ActionResult<ProductResponseDto>> Create(CreateProductDto dto)
         {

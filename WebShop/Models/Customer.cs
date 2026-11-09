@@ -9,5 +9,6 @@
         public string PasswordHash { get; set; } = string.Empty;
         public List<Order> Orders { get; set; } = new();
 
+        public string Role { get; set; } = "Customer";
     }
 }
