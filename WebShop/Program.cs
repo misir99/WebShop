@@ -81,6 +81,8 @@ namespace WebShop
             }
 
             app.UseHttpsRedirection();
+            app.UseDefaultFiles();
+            app.UseStaticFiles();
             app.UseAuthentication();
          
 
@@ -96,4 +98,3 @@ namespace WebShop
 
 
 
-//treba admina odraditi

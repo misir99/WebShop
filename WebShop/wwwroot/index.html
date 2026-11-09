@@ -1,0 +1,110 @@
+﻿<!DOCTYPE html>
+<html lang = "hr">
+
+<head>
+    <meta charset="utf-8" />
+    <title>WebShop</title>
+</head>
+<body>
+    <h1>WebShop</h1>
+    <p id="poruka"></p>
+
+    <div id="prijavaBlok">
+        <h2>Prijava</h2>
+        <input id="email" placeholder="Email" />
+        <input id="lozinka" type="password" placeholder="Lozinka" />
+        <button onclick="prijava()">Prijavi se</button>
+
+    </div>
+
+    <div id="korisnikBlok" style="display:none">
+        <span id="korisnik"></span>
+        <button onclick="odjava()">Odjava</button>
+
+    </div>
+
+    <h2>Proizvodi</h2>
+    <table border="1" cellpadding="6">
+        <thead>
+
+            <tr><th>Naziv</th><th>Kategorija</th><th>Cijena</th><th>Zaliha</th></tr>
+
+        </thead>
+        <tbody id="tijelo"></tbody>
+    </table>
+
+    <script>
+        let token = localStorage.getItem("token");
+
+        function prikaziPoruku(tekst) {
+            document.getElementById("poruka").textContent = tekst;
+        }
+
+        function osvjeziPrijavu() {
+            const prijavljen = token !== null;
+            document.getElementById("prijavaBlok").style.display = prijavljen ? "none" : "block";
+            document.getElementById("korisnikBlok").style.display = prijavljen ? "block" : "none";
+            document.getElementById("korisnik").textContent = prijavljen ? "Prijavljen si. " : "";
+        }
+
+        async function prijava() {
+            const odgovor = await fetch("/api/auth/login", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    email: document.getElementById("email").value,
+                    password: document.getElementById("lozinka").value
+                })
+            });
+
+            if (!odgovor.ok) {
+                prikaziPoruku("Neispravan email ili lozinka.");
+                return;
+            }
+
+            const podaci = await odgovor.json();
+            token = podaci.token;
+            localStorage.setItem("token", token);
+            document.getElementById("lozinka").value = "";
+            prikaziPoruku("");
+            osvjeziPrijavu();
+
+        }
+
+        function odjava() {
+            token = null;
+            localStorage.removeItem("token");
+            osvjeziPrijavu();
+        }
+
+        async function ucitajProizvode() {
+            const odgovor = await fetch("/api/products");
+            if (!odgovor.ok) {
+                prikaziPoruku("Greška pri dohvatu proizvoda:" + odgovor.status);
+                return;
+            }
+
+            const proizvodi = await odgovor.json();
+            const tijelo = document.getElementById("tijelo");
+            tijelo.innerHTML = "";
+
+            for (const p of proizvodi) {
+                const red = document.createElement("tr");
+                const polja = [p.name, p.categoryName, p.price.toFixed(2) + " KM", p.stock];
+                for (const vrijednost of polja) {
+                    const ćelija = document.createElement("td");
+                    ćelija.textContent = vrijednost;
+                    red.appendChild(ćelija);
+                }
+                tijelo.appendChild(red);
+            }
+        }
+
+        osvjeziPrijavu();
+        ucitajProizvode();
+
+    </script>
+
+
+</body>
+</html>
