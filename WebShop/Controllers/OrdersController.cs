@@ -7,7 +7,7 @@ namespace WebShop.Controllers
 {
     [Authorize]
     [ApiController]
-    [Route("api/ [controller]")]
+    [Route("api/[controller]")]
     public class OrdersController : ControllerBase
     {
         private readonly IOrderService _service;

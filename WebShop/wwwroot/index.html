@@ -1,6 +1,5 @@
 ﻿<!DOCTYPE html>
-<html lang = "hr">
-
+<html lang="hr">
 <head>
     <meta charset="utf-8" />
     <title>WebShop</title>
@@ -14,27 +13,41 @@
         <input id="email" placeholder="Email" />
         <input id="lozinka" type="password" placeholder="Lozinka" />
         <button onclick="prijava()">Prijavi se</button>
-
     </div>
 
     <div id="korisnikBlok" style="display:none">
-        <span id="korisnik"></span>
+        <span>Prijavljen si.</span>
         <button onclick="odjava()">Odjava</button>
-
     </div>
 
     <h2>Proizvodi</h2>
     <table border="1" cellpadding="6">
         <thead>
-
-            <tr><th>Naziv</th><th>Kategorija</th><th>Cijena</th><th>Zaliha</th></tr>
-
+            <tr><th>Naziv</th><th>Kategorija</th><th>Cijena</th><th>Zaliha</th><th></th></tr>
         </thead>
         <tbody id="tijelo"></tbody>
     </table>
 
+    <h2>Košarica</h2>
+    <p id="praznaKosarica">Košarica je prazna.</p>
+    <table id="kosaricaTablica" border="1" cellpadding="6" style="display:none">
+        <thead>
+            <tr><th>Naziv</th><th>Količina</th><th>Cijena</th><th>Ukupno</th><th></th></tr>
+        </thead>
+        <tbody id="kosaricaTijelo"></tbody>
+    </table>
+    <p id="ukupno"></p>
+    <button id="gumbNaruci" onclick="naruci()" style="display:none">Naruči</button>
+
+    <div id="narudzbeBlok" style="display:none">
+        <h2>Moje narudžbe</h2>
+        <div id="narudzbe"></div>
+    </div>
+
     <script>
         let token = localStorage.getItem("token");
+        let proizvodi = [];
+        let kosarica = [];   // { id, name, price, quantity }
 
         function prikaziPoruku(tekst) {
             document.getElementById("poruka").textContent = tekst;
@@ -44,7 +57,7 @@
             const prijavljen = token !== null;
             document.getElementById("prijavaBlok").style.display = prijavljen ? "none" : "block";
             document.getElementById("korisnikBlok").style.display = prijavljen ? "block" : "none";
-            document.getElementById("korisnik").textContent = prijavljen ? "Prijavljen si. " : "";
+            document.getElementById("narudzbeBlok").style.display = prijavljen ? "block" : "none";
         }
 
         async function prijava() {
@@ -68,43 +81,192 @@
             document.getElementById("lozinka").value = "";
             prikaziPoruku("");
             osvjeziPrijavu();
-
+            ucitajNarudzbe();
         }
 
         function odjava() {
             token = null;
             localStorage.removeItem("token");
+            document.getElementById("narudzbe").innerHTML = "";
             osvjeziPrijavu();
         }
 
         async function ucitajProizvode() {
             const odgovor = await fetch("/api/products");
             if (!odgovor.ok) {
-                prikaziPoruku("Greška pri dohvatu proizvoda:" + odgovor.status);
+                prikaziPoruku("Greška pri dohvatu proizvoda: " + odgovor.status);
                 return;
             }
 
-            const proizvodi = await odgovor.json();
+            proizvodi = await odgovor.json();
             const tijelo = document.getElementById("tijelo");
             tijelo.innerHTML = "";
 
             for (const p of proizvodi) {
                 const red = document.createElement("tr");
+
                 const polja = [p.name, p.categoryName, p.price.toFixed(2) + " KM", p.stock];
                 for (const vrijednost of polja) {
-                    const ćelija = document.createElement("td");
-                    ćelija.textContent = vrijednost;
-                    red.appendChild(ćelija);
+                    const celija = document.createElement("td");
+                    celija.textContent = vrijednost;
+                    red.appendChild(celija);
                 }
+
+                const celijaGumb = document.createElement("td");
+                const gumb = document.createElement("button");
+                gumb.textContent = "Dodaj u košaricu";
+                gumb.disabled = p.stock === 0;
+                gumb.addEventListener("click", () => dodajUKosaricu(p.id));
+                celijaGumb.appendChild(gumb);
+                red.appendChild(celijaGumb);
+
                 tijelo.appendChild(red);
             }
         }
 
+        function dodajUKosaricu(id) {
+            const p = proizvodi.find(x => x.id === id);
+            if (!p) return;
+
+            const stavka = kosarica.find(x => x.id === id);
+            const uKosarici = stavka ? stavka.quantity : 0;
+
+            if (uKosarici + 1 > p.stock) {
+                prikaziPoruku("Nema više zalihe za '" + p.name + "'.");
+                return;
+            }
+
+            prikaziPoruku("");
+            if (stavka) {
+                stavka.quantity++;
+            } else {
+                kosarica.push({ id: p.id, name: p.name, price: p.price, quantity: 1 });
+            }
+            crtajKosaricu();
+        }
+
+        function ukloniIzKosarice(id) {
+            kosarica = kosarica.filter(x => x.id !== id);
+            crtajKosaricu();
+        }
+
+        function crtajKosaricu() {
+            const tijelo = document.getElementById("kosaricaTijelo");
+            tijelo.innerHTML = "";
+
+            let ukupno = 0;
+            for (const s of kosarica) {
+                const iznos = s.price * s.quantity;
+                ukupno += iznos;
+
+                const red = document.createElement("tr");
+                const polja = [s.name, s.quantity, s.price.toFixed(2) + " KM", iznos.toFixed(2) + " KM"];
+                for (const vrijednost of polja) {
+                    const celija = document.createElement("td");
+                    celija.textContent = vrijednost;
+                    red.appendChild(celija);
+                }
+
+                const celijaGumb = document.createElement("td");
+                const gumb = document.createElement("button");
+                gumb.textContent = "Ukloni";
+                gumb.addEventListener("click", () => ukloniIzKosarice(s.id));
+                celijaGumb.appendChild(gumb);
+                red.appendChild(celijaGumb);
+
+                tijelo.appendChild(red);
+            }
+
+            const imaStavki = kosarica.length > 0;
+            document.getElementById("praznaKosarica").style.display = imaStavki ? "none" : "block";
+            document.getElementById("kosaricaTablica").style.display = imaStavki ? "table" : "none";
+            document.getElementById("gumbNaruci").style.display = imaStavki ? "inline" : "none";
+            document.getElementById("ukupno").textContent = imaStavki ? "Ukupno: " + ukupno.toFixed(2) + " KM" : "";
+        }
+
+        async function naruci() {
+            if (token === null) {
+                prikaziPoruku("Za narudžbu se prvo prijavi.");
+                return;
+            }
+
+            const odgovor = await fetch("/api/orders", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "Authorization": "Bearer " + token
+                },
+                body: JSON.stringify({
+                    items: kosarica.map(s => ({ productId: s.id, quantity: s.quantity }))
+                })
+            });
+
+            if (odgovor.status === 401) {
+                odjava();
+                prikaziPoruku("Prijava je istekla, prijavi se ponovno.");
+                return;
+            }
+
+            if (!odgovor.ok) {
+                const tekst = await odgovor.text();
+                prikaziPoruku("Narudžba nije uspjela: " + tekst);
+                return;
+            }
+
+            kosarica = [];
+            crtajKosaricu();
+            prikaziPoruku("Narudžba je poslana.");
+            ucitajProizvode();
+            ucitajNarudzbe();
+        }
+
+        async function ucitajNarudzbe() {
+            if (token === null) return;
+
+            const odgovor = await fetch("/api/orders", {
+                headers: { "Authorization": "Bearer " + token }
+            });
+
+            if (odgovor.status === 401) {
+                odjava();
+                return;
+            }
+            if (!odgovor.ok) return;
+
+            const narudzbe = await odgovor.json();
+            const kontejner = document.getElementById("narudzbe");
+            kontejner.innerHTML = "";
+
+            if (narudzbe.length === 0) {
+                kontejner.textContent = "Još nemaš narudžbi.";
+                return;
+            }
+
+            for (const n of narudzbe) {
+                const blok = document.createElement("div");
+
+                const naslov = document.createElement("strong");
+                naslov.textContent = "Narudžba #" + n.id + " (" +
+                    new Date(n.createdAt).toLocaleString("hr-HR") + ", " + n.status + ") – " +
+                    n.total.toFixed(2) + " KM";
+                blok.appendChild(naslov);
+
+                const lista = document.createElement("ul");
+                for (const i of n.items) {
+                    const li = document.createElement("li");
+                    li.textContent = i.productName + " × " + i.quantity + " po " + i.unitPrice.toFixed(2) + " KM";
+                    lista.appendChild(li);
+                }
+                blok.appendChild(lista);
+
+                kontejner.appendChild(blok);
+            }
+        }
+
         osvjeziPrijavu();
+        crtajKosaricu();
         ucitajProizvode();
-
+        ucitajNarudzbe();
     </script>
-
-
 </body>
 </html>
