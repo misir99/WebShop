@@ -1,7 +1,9 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using WebShop.Dtos;
 using WebShop.Services;
 using static WebShop.Dtos.CategoryDtos;
+
 
 namespace WebShop.Controllers
 {
@@ -22,6 +24,7 @@ namespace WebShop.Controllers
             return Ok(await _service.GetAllAsync());
         }
 
+        [Authorize(Roles = "Admin")]
         [HttpPost]
         public async Task<ActionResult<CategoryResponseDto>> Create(CreateCategoryDto dto)
         {
