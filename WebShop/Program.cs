@@ -77,6 +77,27 @@ namespace WebShop
             {
                 var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
                 db.Database.Migrate();
+                var adminEmail = builder.Configuration["Admin:Email"];
+                var adminPassword = builder.Configuration["Admin:Password"];
+
+                if (!string.IsNullOrWhiteSpace(adminEmail) && !string.IsNullOrWhiteSpace(adminPassword))
+                {
+                    adminEmail = adminEmail.Trim().ToLower();
+                    if (!db.Customers.Any(c => c.Email == adminEmail))
+                    {
+                        var admin = new WebShop.Models.Customer
+                        {
+                            Name = "Admin",
+                            Email = adminEmail,
+                            Role = "Admin"
+                        };
+                        admin.PasswordHash = new Microsoft.AspNetCore.Identity.PasswordHasher<WebShop.Models.Customer>()
+                            .HashPassword(admin, adminPassword);
+
+                        db.Customers.Add(admin);
+                        db.SaveChanges();
+                    }
+                }
             }
 
             // Configure the HTTP request pipeline.
